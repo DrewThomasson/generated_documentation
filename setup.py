@@ -7,7 +7,7 @@ setup(
     description="A Python package that does nothing only used as a install counter lol",
     author="Drew Thomasson",
     author_email= "",
-    url="https://github.com/yourusername/do_nothing_package",
+    url="https://github.com/DrewThomasson/ebook2audiobookXTTS",
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License",
