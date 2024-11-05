@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="do_nothing_counter_package",
+    name="ebook2audiobook_install_counter",
     version="0.1",
     packages=find_packages(),
     description="A Python package that does nothing only used as a install counter lol",
