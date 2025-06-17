@@ -178,22 +178,20 @@ jobs:
                       
                       # Preserve inline code and images
                       preserved_elements = {}
-                      counter = 0
+                      counter = [0]  # Use list to avoid nonlocal issues
                       
                       # Preserve images
                       def preserve_images(match):
-                          nonlocal counter
-                          placeholder = f"__IMG_{counter}__"
+                          placeholder = f"__IMG_{counter[0]}__"
                           preserved_elements[placeholder] = match.group(0)
-                          counter += 1
+                          counter[0] += 1
                           return placeholder
                       
                       # Preserve inline code
                       def preserve_code(match):
-                          nonlocal counter
-                          placeholder = f"__CODE_{counter}__"
+                          placeholder = f"__CODE_{counter[0]}__"
                           preserved_elements[placeholder] = match.group(0)
-                          counter += 1
+                          counter[0] += 1
                           return placeholder
                       
                       temp_line = re.sub(r'!\[[^\]]*\]\([^)]+\)', preserve_images, line)
