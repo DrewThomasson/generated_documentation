@@ -26,7 +26,7 @@ jobs:
         uses: crowdin/translate-readme@v0.1.2
         with: 
           destination: readme
-          languages: fr,de,es  # Comma-separated list of Crowdin language codes
+          languages: fr-FR,de-DE,es-ES  # Comma-separated list of Crowdin language codes
         env:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
