@@ -10,7 +10,7 @@ jobs:
   translate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -18,42 +18,117 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install requests
-        run: pip install requests
+      - name: Install requirements
+        run: pip install requests markdown-it-py
 
-      - name: Translate README
+      - name: Translate README.md
         run: |
           import os
           import requests
-          import json
+          from markdown_it import MarkdownIt
+          import re
 
-          # Languages to translate into: fr = French, es = Spanish, de = German, zh = Chinese, etc.
+          # Languages to translate into
           target_languages = ["fr", "es", "de", "zh"]
 
-          # Read the original README.md
+          # Readme location
           with open("README.md", "r", encoding="utf-8") as f:
-              readme_content = f.read()
+              md_content = f.read()
 
           os.makedirs("readme", exist_ok=True)
 
-          for lang in target_languages:
-              print(f"Translating to {lang}...")
+          # LibreTranslate API endpoint
+          LT_URL = "https://libretranslate.de/translate"
+
+          def translate(text, lang):
+              if not text.strip():
+                  return text
               resp = requests.post(
-                  "https://libretranslate.de/translate",
+                  LT_URL,
                   headers={"Content-Type": "application/json"},
-                  data=json.dumps({
-                      "q": readme_content,
+                  json={
+                      "q": text,
                       "source": "en",
                       "target": lang,
                       "format": "text"
-                  })
+                  }
               )
-              if resp.status_code == 200:
-                  translated = resp.json()["translatedText"]
-                  with open(f"readme/README.{lang}.md", "w", encoding="utf-8") as out:
-                      out.write(translated)
+              if resp.ok:
+                  return resp.json()["translatedText"]
               else:
-                  print(f"Failed to translate to {lang}: {resp.text}")
+                  print(f"Failed to translate: {resp.text}")
+                  return text
+
+          # Markdown parsing
+          md = MarkdownIt("commonmark")
+          tokens = md.parse(md_content)
+
+          # Helper: collapse consecutive text tokens
+          def collapse_text(tokens):
+              buffer = []
+              output = []
+              for t in tokens:
+                  if t.type == "text":
+                      buffer.append(t.content)
+                  else:
+                      if buffer:
+                          output.append(("text", "".join(buffer)))
+                          buffer = []
+                      output.append((t.type, t.content))
+              if buffer:
+                  output.append(("text", "".join(buffer)))
+              return output
+
+          # Helper: Re-encode Markdown from tokens, with translation
+          def process_tokens(tokens, lang):
+              output = []
+              in_code_block = False
+              inline_code = False
+              fence_lang = ""
+              for token in tokens:
+                  if token.type == "fence":
+                      output.append(f"\n```{token.info.strip()}\n{token.content}```\n")
+                  elif token.type == "code_block":
+                      output.append(f"\n```\n{token.content}```\n")
+                  elif token.type == "code_inline":
+                      output.append(f"`{token.content}`")
+                  elif token.type == "link_open":
+                      output.append("[")
+                  elif token.type == "link_close":
+                      output.append("]")
+                  elif token.type == "text":
+                      # If inside a link, translate
+                      if output and output[-1] == "[":
+                          translated = translate(token.content, lang)
+                          output.append(translated)
+                      else:
+                          # For regular text, translate
+                          translated = translate(token.content, lang)
+                          output.append(translated)
+                  elif token.type == "softbreak":
+                      output.append("\n")
+                  elif token.type == "hardbreak":
+                      output.append("  \n")
+                  elif token.type == "paragraph_open":
+                      output.append("\n")
+                  elif token.type == "paragraph_close":
+                      output.append("\n")
+                  elif token.type == "bullet_list_open":
+                      output.append("\n")
+                  elif token.type == "list_item_open":
+                      output.append("- ")
+                  elif token.type == "heading_open":
+                      output.append(f"\n{'#' * int(token.tag[1])} ")
+                  elif token.type == "heading_close":
+                      output.append("\n")
+              return "".join(output)
+
+          # Translate and write outputs
+          for lang in target_languages:
+              print(f"Translating to {lang}")
+              translated_content = process_tokens(tokens, lang)
+              with open(f"readme/README.{lang}.md", "w", encoding="utf-8") as out:
+                  out.write(translated_content)
 
         shell: python
 
@@ -62,7 +137,7 @@ jobs:
         with:
           commit-message: "Add translated READMEs"
           title: "Add translated README files"
-          body: "This PR adds translated versions of README.md to the /readme directory."
+          body: "This PR adds translated versions of README.md to the /readme directory, translating only non-code text and hyperlink labels."
           branch: "translated-readmes"
           add-paths: |
             readme/README.*.md
