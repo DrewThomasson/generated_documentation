@@ -2,8 +2,14 @@
 name: Translate Readme
 
 on:
+  # When you push to the `main` branch
   push:
     branches: [ main ]
+  # And optionally, once every 12 hours
+  schedule:
+    - cron: '0 */12 * * *' # https://crontab.guru/#0_*/12_*_*_*
+  # To manually run this workflow
+  workflow_dispatch:
 
 jobs:
   translate-readme:
@@ -13,37 +19,20 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Upload README.md to Crowdin
-        uses: crowdin/translate-readme@v0.1.3
-        with:
-          upload_sources: true
-          download_translations: false
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-          DEBUG: true
+    - name: Translate Readme
+      uses: crowdin/translate-readme@v0.1.2
+      env:
+        CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+        CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
-      - name: Pre-Translate README.md via Translation Memory
-        uses: crowdin/github-action@v2
-        with:
-          command: 'pre-translate'
-          command_args: '-l uk --method tm'
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-          DEBUG: true
-
-      - name: Download Readme translations from Crowdin
-        uses: crowdin/translate-readme@v0.1.3
-        with:
-          upload_sources: false
-          download_translations: true
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-          DEBUG: true
-
-      # Create a PR with the latest translations
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        title: New Readme Translations by Crowdin
+        body: By [translate-readme](https://github.com/crowdin/translate-readme) GitHub action
+        commit-message: New Readme Translations
+        committer: Crowdin Bot <support+bot@crowdin.com>
+        branch: docs/readme-translations
