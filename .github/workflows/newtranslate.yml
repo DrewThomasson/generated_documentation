@@ -19,125 +19,216 @@ jobs:
           python-version: '3.x'
 
       - name: Install requirements
-        run: pip install requests markdown-it-py
+        run: pip install requests
 
-      - name: Translate README.md
+      - name: Create translation script
         run: |
+          cat > translate.py << 'EOF'
           import os
           import requests
-          from markdown_it import MarkdownIt
           import re
+          import time
 
-          # Languages to translate into
           target_languages = ["fr", "es", "de", "zh"]
-
-          # Readme location
-          with open("README.md", "r", encoding="utf-8") as f:
-              md_content = f.read()
-
-          os.makedirs("readme", exist_ok=True)
-
-          # LibreTranslate API endpoint
           LT_URL = "https://libretranslate.de/translate"
 
           def translate(text, lang):
-              if not text.strip():
+              text = text.strip()
+              if not text or len(text) < 3:  # Skip very short or empty text
                   return text
-              resp = requests.post(
-                  LT_URL,
-                  headers={"Content-Type": "application/json"},
-                  json={
-                      "q": text,
-                      "source": "en",
-                      "target": lang,
-                      "format": "text"
-                  }
-              )
-              if resp.ok:
-                  return resp.json()["translatedText"]
-              else:
-                  print(f"Failed to translate: {resp.text}")
+              
+              # Don't translate URLs, file paths, code, or technical terms
+              if any(skip in text.lower() for skip in ['http', 'github.com', '.com', '.py', '.sh', '.cmd', 'docker', 'pip install', 'git clone']):
                   return text
-
-          # Markdown parsing
-          md = MarkdownIt("commonmark")
-          tokens = md.parse(md_content)
-
-          # Helper: collapse consecutive text tokens
-          def collapse_text(tokens):
-              buffer = []
-              output = []
-              for t in tokens:
-                  if t.type == "text":
-                      buffer.append(t.content)
+              
+              try:
+                  resp = requests.post(
+                      LT_URL,
+                      headers={"Content-Type": "application/json"},
+                      json={
+                          "q": text,
+                          "source": "en",
+                          "target": lang,
+                          "format": "text"
+                      },
+                      timeout=30
+                  )
+                  if resp.ok:
+                      result = resp.json()["translatedText"]
+                      time.sleep(0.1)  # Be nice to the free API
+                      return result
                   else:
-                      if buffer:
-                          output.append(("text", "".join(buffer)))
-                          buffer = []
-                      output.append((t.type, t.content))
-              if buffer:
-                  output.append(("text", "".join(buffer)))
-              return output
+                      print(f"Translation failed for '{text[:50]}...': {resp.text}")
+                      return text
+              except Exception as e:
+                  print(f"Translation error for '{text[:50]}...': {e}")
+                  return text
 
-          # Helper: Re-encode Markdown from tokens, with translation
-          def process_tokens(tokens, lang):
-              output = []
-              in_code_block = False
-              inline_code = False
-              fence_lang = ""
-              for token in tokens:
-                  if token.type == "fence":
-                      output.append(f"\n```{token.info.strip()}\n{token.content}```\n")
-                  elif token.type == "code_block":
-                      output.append(f"\n```\n{token.content}```\n")
-                  elif token.type == "code_inline":
-                      output.append(f"`{token.content}`")
-                  elif token.type == "link_open":
-                      output.append("[")
-                  elif token.type == "link_close":
-                      output.append("]")
-                  elif token.type == "text":
-                      # If inside a link, translate
-                      if output and output[-1] == "[":
-                          translated = translate(token.content, lang)
-                          output.append(translated)
-                      else:
-                          # For regular text, translate
-                          translated = translate(token.content, lang)
-                          output.append(translated)
-                  elif token.type == "softbreak":
-                      output.append("\n")
-                  elif token.type == "hardbreak":
-                      output.append("  \n")
-                  elif token.type == "paragraph_open":
-                      output.append("\n")
-                  elif token.type == "paragraph_close":
-                      output.append("\n")
-                  elif token.type == "bullet_list_open":
-                      output.append("\n")
-                  elif token.type == "list_item_open":
-                      output.append("- ")
-                  elif token.type == "heading_open":
-                      output.append(f"\n{'#' * int(token.tag[1])} ")
-                  elif token.type == "heading_close":
-                      output.append("\n")
-              return "".join(output)
+          with open("README.md", "r", encoding="utf-8") as f:
+              content = f.read()
 
-          # Translate and write outputs
+          os.makedirs("readme", exist_ok=True)
+
           for lang in target_languages:
-              print(f"Translating to {lang}")
-              translated_content = process_tokens(tokens, lang)
-              with open(f"readme/README.{lang}.md", "w", encoding="utf-8") as out:
-                  out.write(translated_content)
+              print(f"Translating to {lang}...")
+              
+              lines = content.split('\n')
+              translated_lines = []
+              in_code_block = False
+              
+              for line_num, line in enumerate(lines):
+                  original_line = line
+                  
+                  # Handle code blocks
+                  if line.strip().startswith('```'):
+                      in_code_block = not in_code_block
+                      translated_lines.append(line)
+                      continue
+                  
+                  if in_code_block:
+                      translated_lines.append(line)
+                      continue
+                  
+                  # Skip empty lines
+                  if not line.strip():
+                      translated_lines.append(line)
+                      continue
+                  
+                  # Handle different markdown elements
+                  
+                  # Headings
+                  heading_match = re.match(r'^(#{1,6})\s+(.+)', line)
+                  if heading_match:
+                      hashes, heading_text = heading_match.groups()
+                      translated_text = translate(heading_text, lang)
+                      translated_lines.append(f"{hashes} {translated_text}")
+                      continue
+                  
+                  # List items
+                  list_match = re.match(r'^(\s*[-*+]\s+)(.+)', line)
+                  if list_match:
+                      prefix, list_text = list_match.groups()
+                      
+                      # Handle links in list items
+                      def replace_links(text):
+                          def link_replacer(match):
+                              link_text = match.group(1)
+                              url = match.group(2)
+                              translated_link_text = translate(link_text, lang)
+                              return f"[{translated_link_text}]({url})"
+                          return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', link_replacer, text)
+                      
+                      # Remove inline code before translation
+                      text_without_code = re.sub(r'`[^`]+`', '', list_text)
+                      text_without_links = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1', text_without_code)
+                      
+                      if text_without_links.strip():
+                          # Process links first
+                          processed_text = replace_links(list_text)
+                          # Then translate the remaining text
+                          final_text = translate(processed_text, lang)
+                          translated_lines.append(f"{prefix}{final_text}")
+                      else:
+                          translated_lines.append(line)
+                      continue
+                  
+                  # Handle blockquotes/alerts
+                  if line.startswith('>'):
+                      alert_match = re.match(r'^(>\s*\[!(?:IMPORTANT|NOTE|WARNING)\]\s*)(.*)$', line)
+                      if alert_match:
+                          prefix, alert_text = alert_match.groups()
+                          if alert_text.strip():
+                              translated_text = translate(alert_text, lang)
+                              translated_lines.append(f"{prefix}{translated_text}")
+                          else:
+                              translated_lines.append(line)
+                      else:
+                          quote_match = re.match(r'^(>\s*)(.+)', line)
+                          if quote_match:
+                              prefix, quote_text = quote_match.groups()
+                              translated_text = translate(quote_text, lang)
+                              translated_lines.append(f"{prefix}{translated_text}")
+                          else:
+                              translated_lines.append(line)
+                      continue
+                  
+                  # Handle table rows (skip headers with |---|)
+                  if '|' in line and not re.match(r'^\s*\|[\s:-]+\|', line):
+                      cells = line.split('|')
+                      translated_cells = []
+                      for cell in cells:
+                          cell_content = cell.strip()
+                          if cell_content and not cell_content.startswith(':') and not cell_content.endswith(':'):
+                              translated_cells.append(translate(cell_content, lang))
+                          else:
+                              translated_cells.append(cell)
+                      translated_lines.append('|'.join(translated_cells))
+                      continue
+                  
+                  # Handle regular paragraphs
+                  if line.strip():
+                      # Handle links in paragraphs
+                      def replace_paragraph_links(text):
+                          def link_replacer(match):
+                              link_text = match.group(1)
+                              url = match.group(2)
+                              translated_link_text = translate(link_text, lang)
+                              return f"[{translated_link_text}]({url})"
+                          return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', link_replacer, text)
+                      
+                      # Preserve inline code and images
+                      preserved_elements = {}
+                      counter = 0
+                      
+                      # Preserve images
+                      def preserve_images(match):
+                          nonlocal counter
+                          placeholder = f"__IMG_{counter}__"
+                          preserved_elements[placeholder] = match.group(0)
+                          counter += 1
+                          return placeholder
+                      
+                      # Preserve inline code
+                      def preserve_code(match):
+                          nonlocal counter
+                          placeholder = f"__CODE_{counter}__"
+                          preserved_elements[placeholder] = match.group(0)
+                          counter += 1
+                          return placeholder
+                      
+                      temp_line = re.sub(r'!\[[^\]]*\]\([^)]+\)', preserve_images, line)
+                      temp_line = re.sub(r'`[^`]+`', preserve_code, temp_line)
+                      
+                      # Process links
+                      temp_line = replace_paragraph_links(temp_line)
+                      
+                      # Translate the processed text
+                      translated_line = translate(temp_line, lang)
+                      
+                      # Restore preserved elements
+                      for placeholder, original in preserved_elements.items():
+                          translated_line = translated_line.replace(placeholder, original)
+                      
+                      translated_lines.append(translated_line)
+                  else:
+                      translated_lines.append(line)
+              
+              # Write the translated content
+              with open(f"readme/README.{lang}.md", "w", encoding="utf-8") as f:
+                  f.write('\n'.join(translated_lines))
+              
+              print(f"Translation to {lang} completed")
+          EOF
 
-        shell: python
+      - name: Run translation
+        run: python translate.py
 
       - name: Commit and create PR with translated READMEs
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "Add translated READMEs"
           title: "Add translated README files"
-          body: "This PR adds translated versions of README.md to the /readme directory, translating only non-code text and hyperlink labels."
+          body: "This PR adds translated versions of README.md to the /readme directory, translating only meaningful text while preserving code blocks, URLs, and markdown structure."
           branch: "translated-readmes"
           add-paths: |
             readme/README.*.md
