@@ -21,4 +21,4 @@ jobs:
         run: |
           echo "Running test..."
           # Replace the line below with your actual test command
-          echo "✅ Test completed successfully!"
+          ls && pwd && conda env list
