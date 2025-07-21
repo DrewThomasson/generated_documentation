@@ -1,0 +1,24 @@
+name: Test macOS Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  macos-test:
+    runs-on: [self-hosted, macos]
+
+    steps:
+      - name: Print runner info
+        run: |
+          echo "Running on:"
+          uname -a
+          sw_vers
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run test
+        run: |
+          echo "Running test..."
+          # Replace the line below with your actual test command
+          echo "✅ Test completed successfully!"
