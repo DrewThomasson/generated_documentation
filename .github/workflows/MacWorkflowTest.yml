@@ -30,3 +30,15 @@ jobs:
           conda activate base
 
           python -c "print('poop')"
+
+      - name: Run ebook2audiobook help test
+        shell: bash
+        run: |
+          echo "Running test..."
+          ./ebook2audiobook.sh --help
+
+      - name: Run ebook2audiobook quick test
+        shell: bash
+        run: |
+          echo "Running test..."
+          ./ebook2audiobook.sh --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine FAIRSEQ
