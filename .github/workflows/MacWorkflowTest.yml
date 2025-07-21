@@ -25,20 +25,23 @@ jobs:
           pwd
           conda env list
 
-          # Properly initialize Conda
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
-          conda activate base
+          git clone https://github.com/DrewThomasson/ebook2audiobook.git
 
-          python -c "print('poop')"
+          cd ebook2audiobook
+
+          # Properly initialize Conda
+          # source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
 
       - name: Run ebook2audiobook help test
         shell: bash
         run: |
           echo "Running test..."
+          cd ebook2audiobook
           ./ebook2audiobook.sh --help
 
       - name: Run ebook2audiobook quick test
         shell: bash
         run: |
           echo "Running test..."
+          cd ebook2audiobook
           ./ebook2audiobook.sh --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine FAIRSEQ
