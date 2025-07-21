@@ -21,4 +21,5 @@ jobs:
         run: |
           echo "Running test..."
           # Replace the line below with your actual test command
-          ls && pwd && conda env list
+          ls && pwd && conda env list && conda activate base && python -c "print('poop')"
+
