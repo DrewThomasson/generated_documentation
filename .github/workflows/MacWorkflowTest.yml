@@ -17,9 +17,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run test
+      - name: Run test with conda
+        shell: bash
         run: |
           echo "Running test..."
-          # Replace the line below with your actual test command
-          ls && pwd && conda env list && conda init && conda activate base && python -c "print('poop')"
+          ls
+          pwd
+          conda env list
 
+          # Properly initialize Conda
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          conda activate base
+
+          python -c "print('poop')"
