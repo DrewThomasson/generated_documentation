@@ -21,6 +21,7 @@ jobs:
         run: |
           # rm -rf /tmp/ebook2audiobook
           # git clone https://github.com/DrewThomasson/ebook2audiobook.git /tmp/ebook2audiobook
+          cd /tmp/ebook2audiobook
           grep -qx 'set -e' ebook2audiobook.sh || sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
 
       - name: Initalize conda for Unidict
