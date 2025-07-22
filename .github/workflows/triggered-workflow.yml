@@ -1,0 +1,16 @@
+# .github/workflows/triggered-workflow.yml
+name: Triggered After Main
+
+on:
+  workflow_run:
+    workflows: ["Main Workflow"]
+    types:
+      - completed
+
+jobs:
+  run-after:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Confirmed
+        run: echo "Triggered workflow ran because Main Workflow completed successfully"
