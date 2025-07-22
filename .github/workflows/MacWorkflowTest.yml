@@ -39,12 +39,7 @@ jobs:
           export TMPDIR=/tmp
           # ./ebook2audiobook.sh --help
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-          
-  macos-E2A-Fail-Test:
-    runs-on: [self-hosted, macos]
-    needs: macos-E2A-Install
 
-    steps:
       - name: Fail sh
         run: |
           echo "Running Fail Test..."
@@ -57,4 +52,6 @@ jobs:
           export TMPDIR=/tmp
           conda activate ./python_env/
           python app.py --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+
+
           
