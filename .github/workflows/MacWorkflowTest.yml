@@ -50,4 +50,4 @@ jobs:
         working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running test..."
-          ./ebook2audiobook.sh --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
