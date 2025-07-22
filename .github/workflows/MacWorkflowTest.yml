@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  macos-test:
+  macos-E2A-Install:
     runs-on: [self-hosted, macos]
 
     steps:
@@ -22,32 +22,39 @@ jobs:
           rm -rf /tmp/ebook2audiobook
           git clone https://github.com/DrewThomasson/ebook2audiobook.git /tmp/ebook2audiobook
 
-      - name: Run test with conda
+      - name: Initalize conda for Unidict
         shell: bash
         working-directory: /tmp/ebook2audiobook
         run: |
-          echo "Running test..."
-          ls
-          pwd
-          conda env list
-
-          # Properly initialize Conda, if needed
+          echo "Initializing conda..."
+          # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
           source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          echo "conda initilized!"
 
-      - name: Run ebook2audiobook help test
+      - name: Ebook2audiobook install
         shell: bash
         working-directory: /tmp/ebook2audiobook
         run: |
-          echo "Running test..."
+          echo "Running help install test..."
           export TMPDIR=/tmp
-          ./ebook2audiobook.sh --help
-          # conda activate ./python_env/
-          # python -m unidic download
-          # conda deactivate
-
-      - name: Run ebook2audiobook quick test
-        shell: bash
-        working-directory: /tmp/ebook2audiobook
-        run: |
-          echo "Running test..."
+          # ./ebook2audiobook.sh --help
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+          
+  macos-E2A-Fail-Test:
+    runs-on: [self-hosted, macos]
+    needs: macos-E2A-Install
+
+    steps:
+      - name: Fail sh
+        run: |
+          echo "Running Fail Test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine NotRealTTS
+
+      - name: Fail app.py
+        run: |
+          echo "Running Fail Test..."
+          export TMPDIR=/tmp
+          conda activate ./python_env/
+          python app.py --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+          
