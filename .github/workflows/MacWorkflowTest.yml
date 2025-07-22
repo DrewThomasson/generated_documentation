@@ -41,12 +41,16 @@ jobs:
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
       - name: Fail sh
+        shell: bash
+        working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running Fail Test..."
           export TMPDIR=/tmp
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine NotRealTTS
 
       - name: Fail app.py
+        shell: bash
+        working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running Fail Test..."
           export TMPDIR=/tmp
