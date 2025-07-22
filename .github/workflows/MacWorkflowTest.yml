@@ -32,19 +32,22 @@ jobs:
           conda env list
 
           # Properly initialize Conda, if needed
-          # source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
 
       - name: Run ebook2audiobook help test
         shell: bash
         working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running test..."
+          export TMPDIR=/tmp
           ./ebook2audiobook.sh --help
+          # conda activate ./python_env/
+          # python -m unidic download
+          # conda deactivate
 
       - name: Run ebook2audiobook quick test
         shell: bash
         working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running test..."
-          export TMPDIR=/tmp
           ./ebook2audiobook.sh --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
