@@ -14,35 +14,37 @@ jobs:
           uname -a
           sw_vers
 
-      - name: Checkout repository
+      - name: Checkout this (generated_documentation) repository
         uses: actions/checkout@v4
+
+      - name: Clone ebook2audiobook to short path
+        run: |
+          rm -rf /tmp/ebook2audiobook
+          git clone https://github.com/DrewThomasson/ebook2audiobook.git /tmp/ebook2audiobook
 
       - name: Run test with conda
         shell: bash
+        working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running test..."
           ls
           pwd
           conda env list
 
-          git clone https://github.com/DrewThomasson/ebook2audiobook.git
-
-          cd ebook2audiobook
-
-          # Properly initialize Conda
+          # Properly initialize Conda, if needed
           # source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
 
       - name: Run ebook2audiobook help test
         shell: bash
+        working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running test..."
-          cd ebook2audiobook
           ./ebook2audiobook.sh --help
 
       - name: Run ebook2audiobook quick test
         shell: bash
+        working-directory: /tmp/ebook2audiobook
         run: |
           echo "Running test..."
-          cd ebook2audiobook
           export TMPDIR=/tmp
           ./ebook2audiobook.sh --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
