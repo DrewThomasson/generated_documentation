@@ -16,15 +16,19 @@ jobs:
 
       - name: Checkout this (generated_documentation) repository
         uses: actions/checkout@v4
+        with:
+          # Check out the project into a short folder named 'repo'
+          path: 'repo'
 
       - name: Clone ebook2audiobook to short path
+        shell: bash
+        working-directory: repo
         run: |
-          rm -rf /tmp/ebook2audiobook
-          git clone https://github.com/DrewThomasson/ebook2audiobook.git /tmp/ebook2audiobook
+          [ -d ebook2audiobook ] && (cd ebook2audiobook && git pull) || git clone https://github.com/DrewThomasson/ebook2audiobook.git
 
       - name: Initalize conda for Unidict
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Initializing conda..."
           # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
@@ -33,16 +37,17 @@ jobs:
 
       - name: Ebook2audiobook install
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running help install test..."
           export TMPDIR=/tmp
           # ./ebook2audiobook.sh --help
+          cd ebook2audiobook
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
       - name: Fail sh
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running Fail Test..."
           export TMPDIR=/tmp
@@ -50,7 +55,7 @@ jobs:
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running English TACOTRON2 Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -59,7 +64,7 @@ jobs:
 
       - name: English FAIRSEQ Custom-Voice headless single test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running English FAIRSEQ Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -68,7 +73,7 @@ jobs:
           
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -76,7 +81,7 @@ jobs:
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running English VITS Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -84,7 +89,7 @@ jobs:
 
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running English YOURTTS Custom-Voice headless batch test..."
           export TMPDIR=/tmp
@@ -93,7 +98,7 @@ jobs:
 
       - name: Default XTTSv2 headless Custom-Voice single test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running Default XTTSv2 headless Custom-Voice single test..."
           export TMPDIR=/tmp
@@ -101,7 +106,7 @@ jobs:
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           export TMPDIR=/tmp
@@ -109,7 +114,7 @@ jobs:
 
       - name: English BARK Custom-Voice headless single test
         shell: bash
-        working-directory: /tmp/ebook2audiobook
+        working-directory: repo
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           export TMPDIR=/tmp
