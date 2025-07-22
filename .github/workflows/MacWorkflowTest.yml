@@ -19,7 +19,7 @@ jobs:
 
       - name: Clone ebook2audiobook to short path
         run: |
-          rm -rf /tmp/ebook2audiobook
+          # rm -rf /tmp/ebook2audiobook
           git clone https://github.com/DrewThomasson/ebook2audiobook.git /tmp/ebook2audiobook
           git pull
           git checkout workflow-patch-1
