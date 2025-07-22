@@ -14,11 +14,9 @@ jobs:
           uname -a
           sw_vers
 
-      - name: Checkout this (generated_documentation) repository
-        uses: actions/checkout@v4
-        with:
-          # Check out the project into a short folder named 'repo'
-          path: '/repo'
+      - name: Print current commit SHA (GitHub variable)
+        run: echo "Current commit SHA is ${{ github.sha }}"
+
 
       - name: Clone ebook2audiobook to short path
         shell: bash
