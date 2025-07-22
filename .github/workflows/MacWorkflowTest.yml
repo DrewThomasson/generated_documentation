@@ -44,4 +44,4 @@ jobs:
         run: |
           echo "Running test..."
           cd ebook2audiobook
-          ./ebook2audiobook.sh --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine FAIRSEQ
+          ./ebook2audiobook.sh --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
